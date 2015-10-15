@@ -1,4 +1,4 @@
-package com.n26.yonatan;
+package com.n26.yonatan.testutils;
 
 import org.hamcrest.Description;
 import org.hamcrest.Factory;
