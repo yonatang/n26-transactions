@@ -59,7 +59,9 @@ public class TransactionService {
             entity.setParent(parent);
         }
 
-        entity = transactionRepository.save(entity);
+        log.debug("Saving a transaction {}", entity);
+        transactionRepository.save(entity);
+
         Set<Long> visited = new HashSet<>();
         TransactionEntity parent = entity.getParent();
         while (parent != null) {
@@ -75,6 +77,7 @@ public class TransactionService {
             TransactionDescendant descendant = new TransactionDescendant();
             descendant.setParent(parent);
             descendant.setDescendant(entity);
+            log.debug("Saving a descendant {}", descendant);
             transactionDescendantRepository.save(descendant);
             parent = parent.getParent();
         }
@@ -110,7 +113,7 @@ public class TransactionService {
     }
 
     /**
-     * Calculates the sum of the transaction and all its children. If a cycle is detected, an exception is thrown
+     * Calculates the sum of the transaction and all its children
      *
      * @param transactionId
      * @return
