@@ -2,7 +2,6 @@ package com.n26.yonatan.model;
 
 import lombok.Data;
 import lombok.ToString;
-import org.hibernate.annotations.SelectBeforeUpdate;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.Entity;
@@ -23,8 +22,6 @@ import javax.validation.constraints.Pattern;
 //do not print parent, to eliminate stackoverflow exception in case of circular transactions
 @ToString(exclude = "parent")
 @Entity
-@SelectBeforeUpdate()
-//@org.hibernate.annotations.Entity(selectBeforeUpdate = true)
 @Table(indexes = {@Index(columnList = "type", name = "type_index")})
 public class TransactionEntity {
     @Id
