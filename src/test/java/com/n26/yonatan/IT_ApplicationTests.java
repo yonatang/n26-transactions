@@ -10,9 +10,11 @@ import com.n26.yonatan.model.TransactionEntity;
 import com.n26.yonatan.repository.TransactionDescendantRepository;
 import com.n26.yonatan.repository.TransactionRepository;
 import com.n26.yonatan.service.TransactionService;
+import com.n26.yonatan.testutils.SlowTest;
 import lombok.AllArgsConstructor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +45,7 @@ import static org.springframework.http.HttpStatus.OK;
 /**
  * Integration tests for the app
  */
+@Category(SlowTest.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @IntegrationTest("server.port:0")
 @TestPropertySource("classpath:test-application.properties")

@@ -9,8 +9,10 @@ import com.n26.yonatan.model.TransactionDescendant;
 import com.n26.yonatan.model.TransactionEntity;
 import com.n26.yonatan.repository.TransactionDescendantRepository;
 import com.n26.yonatan.repository.TransactionRepository;
+import com.n26.yonatan.testutils.FastTest;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -28,6 +30,7 @@ import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@Category(FastTest.class)
 @RunWith(MockitoJUnitRunner.class)
 public class TransactionServiceTest {
 

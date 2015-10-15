@@ -5,8 +5,10 @@ import com.n26.yonatan.dto.Sum;
 import com.n26.yonatan.dto.Transaction;
 import com.n26.yonatan.exception.NotFoundException;
 import com.n26.yonatan.service.TransactionService;
+import com.n26.yonatan.testutils.FastTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -34,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+@Category(FastTest.class)
 @RunWith(MockitoJUnitRunner.class)
 public class TransactionsControllerTest {
 
