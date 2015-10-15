@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/yonatang/n26-transactions.svg?branch=master)](https://travis-ci.org/yonatang/n26-transactions)
+
 # Prerequisites
 * Gradle
 * [Lombok](https://projectlombok.org) plugin, to get the code compiled in the IDE
