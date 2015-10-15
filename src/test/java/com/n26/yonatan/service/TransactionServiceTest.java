@@ -90,7 +90,6 @@ public class TransactionServiceTest {
     public void createTransaction_shouldSaveParentlessTransaction() {
         Transaction t = transaction(1.1, "type");
         TransactionEntity te = entity(2, 1.1, "type");
-        when(transactionRepository.save(te)).thenReturn(te);
 
         transactionService.createTransaction(2, t);
 
@@ -102,7 +101,6 @@ public class TransactionServiceTest {
         Transaction tParent = transaction(1.1, "type", 2L);
         TransactionEntity te2 = entity(2, 1.1, "type");
         TransactionEntity te1 = entity(1, 1.1, "type", te2);
-        when(transactionRepository.save(te1)).thenReturn(te1);
         setupFindTransaction(te2);
 
         transactionService.createTransaction(1, tParent);
@@ -132,11 +130,7 @@ public class TransactionServiceTest {
 
         setupFindTransaction(te1);
         setupFindTransaction(te2);
-
-        TransactionEntity te3 = entity(3, 1.1, "type", te1);
-
         Transaction t = transaction(1.1, "type", te1.getId());
-        when(transactionRepository.save(te3)).thenReturn(te3);
 
         transactionService.createTransaction(3, t);
     }
