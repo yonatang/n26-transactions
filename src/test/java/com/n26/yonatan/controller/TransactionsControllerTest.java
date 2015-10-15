@@ -12,12 +12,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.Arrays;
+import java.util.List;
+
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -86,6 +92,22 @@ public class TransactionsControllerTest {
     }
 
     @Test
+    public void createTransaction_shouldRejectFailedValidation_conflict() throws Exception {
+        Transaction t = new Transaction();
+        t.setType("type");
+        t.setAmount(1);
+        doThrow(DataIntegrityViolationException.class)
+                .when(transactionService).createTransaction(1, t);
+
+        mockMvc.perform(put("/transactionservice/transaction/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(t)))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("status", is("conflict")));
+    }
+
+    @Test
     public void createTransaction_shouldRejectFailedValidation_missingType() throws Exception {
         Object[][] tests = new Object[][]{
                 new Object[]{1.0, null}, //when type is null
@@ -125,6 +147,18 @@ public class TransactionsControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("status", is("not found")));
+    }
+
+    @Test
+    public void getTransactionsByType_shouldReturnTransactionIds() throws Exception {
+        List<Long> ids = Arrays.asList(1L, 5L);
+        when(transactionService.getTransactionIdsByType("cars")).thenReturn(ids);
+        mockMvc.perform(get("/transactionservice/types/cars"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0]", is(1)))
+                .andExpect(jsonPath("$[1]", is(5)));
     }
 
 }
