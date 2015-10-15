@@ -49,8 +49,8 @@ Travis-CI Status: [![Build Status](https://travis-ci.org/yonatang/n26-transactio
       implementation is preferable, for better performance would achieved in high-load scenarios.
     * The ```type``` column is indexed as well, for better performances for the ```/types/``` requests.  
 * In case the DB starts to get heated, a cluster is required - which require a sharding strategy. 
-    * The ```transaction_entity``` can be sharded by the transaction id (assuming it is uniformely distributed - 
-      otherwise somekind of hashing is required).
+    * The ```transaction_entity``` can be sharded by the transaction id (assuming it is uniformly distributed - 
+      otherwise some kind of hashing is required).
     * The ```transaction_descendant``` should be sharded by the ```parent``` column, as every batch of operations 
       (inserts and selections) are done using a single parent transaction id. Again, if the transaction id is not
       uniformly distributed, hashing is required
@@ -83,15 +83,24 @@ Travis-CI Status: [![Build Status](https://travis-ci.org/yonatang/n26-transactio
 ## Testing
 * Unitests - Fast tests. Testing each class separately, while using Mockito to mock the reast. Not running within a 
   spring context.
+    * The unitests covers 100% of the lines of interesting bits (the controller and the service) and 89% of the entire 
+      code
 * Integration tests - Slow tests, but integrative. Running inside a real tomcat, using a real DB and 
   a full spring context.
     * Contains tests and flows I would expect a QA person to think of.
+        * Creating transactions
+        * Query by types
+        * Getting existing and non-existing transactions
+        * Summing transactions with children, without children, and non existing transactions
+        * Concurrent operations
+        * Clean rollbacks verification
     * A single test method might test multiple requirements, in order to make it as fast as possible.
     * Emphasised concurrency testing - race conditions and rollbacks - which is hard to test with mocked environment
 * All tests are continuously tests on a free Travis-CI server: https://travis-ci.org/yonatang/n26-transactions
 * Execute ```gradle check``` to run all tests
 * The actual SQL commands are logged during the integration tests - plenty of insights can be found by looking 
   at the actual way the app is communicating with the database
+
 
 ## General
 * Spring takes care to most of the non-functional requirements, such as JSON serialization and deserialization, 
@@ -100,4 +109,5 @@ Travis-CI Status: [![Build Status](https://travis-ci.org/yonatang/n26-transactio
     * Can be easily containerized in a docker container: https://spring.io/guides/gs/spring-boot-docker/
 * Using gradle gives powerful dependency management without a verbose POM file
 * Using lombok to reduce boilerplate getters and setters
+* Using Github to store the codebase
 
