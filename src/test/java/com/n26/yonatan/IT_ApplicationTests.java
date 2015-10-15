@@ -4,6 +4,7 @@ import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.RequestSpecBuilder;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.parsing.Parser;
+import com.jayway.restassured.response.Response;
 import com.n26.yonatan.dto.Status;
 import com.n26.yonatan.dto.Transaction;
 import com.n26.yonatan.model.TransactionEntity;
@@ -31,12 +32,16 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.RestAssured.when;
 import static com.n26.yonatan.testutils.IsCloseTo.closeTo;
+import static com.n26.yonatan.testutils.Utils.descendant;
 import static com.n26.yonatan.testutils.Utils.entity;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
@@ -109,8 +114,7 @@ public class IT_ApplicationTests {
                     .statusCode(404);
 
             // create transaction
-            given().body(t.transaction)
-                    .put("transactionservice/transaction/{id}", t.id)
+            putTransaction(t)
                     .then().statusCode(OK.value())
                     .body("status", is("ok"));
 
@@ -124,8 +128,7 @@ public class IT_ApplicationTests {
 
         }
         // verify you cannot change transaction
-        given().body(graph[0].transaction)
-                .put("transactionservice/transaction/{id}", graph[0].id)
+        putTransaction(graph[0])
                 .then().statusCode(CONFLICT.value())
                 .body("status", is("conflict"));
         {
@@ -173,20 +176,28 @@ public class IT_ApplicationTests {
 
     /**
      * This test make sure one single transaction with a specific ID
-     * can be created when trying concurrently
+     * can be created when trying concurrently.<br>
+     * In addition, it verify that a failure is rolled back properly.
      *
      * @throws Exception
      */
     @Test
     public void testConcurrentTransactionCreation() throws Exception {
+
+        TransactionWrapper parent = transaction(9999, 5, "parent");
+        putTransaction(parent)
+                .then()
+                .statusCode(OK.value());
+        TransactionEntity parentEntity = transactionRepository.findOne(parent.id);
+        // Assert the parent saved to the DB
+        assertThat(parentEntity, is(notNullValue()));
+
         for (int i = 0; i < 10; i++) {
-            TransactionWrapper tw = transaction(i, 1.1, "concurrent");
+            TransactionWrapper tw = transaction(i, 1.1, "concurrent", parent.id);
             CompletableFuture<Status>[] statuses = new CompletableFuture[2];
             for (int j = 0; j < 2; j++) {
                 statuses[j] = CompletableFuture.supplyAsync(() ->
-                                given()
-                                        .body(tw.transaction)
-                                        .put("transactionservice/transaction/{id}", tw.id)
+                                putTransaction(tw)
                                         .andReturn().as(Status.class)
                 );
             }
@@ -198,6 +209,12 @@ public class IT_ApplicationTests {
                     anyOf(
                             containsString("ok:conflict"),
                             containsString("conflict:ok")));
+
+            // Make sure the entity exists in the DB
+            assertThat(transactionRepository.findOne((long) i), is(notNullValue()));
+            // Make sure descendants of the failed creations were rolled back
+            assertThat(transactionDescendantRepository.findByParent(parentEntity), hasSize(i + 1));
+
         }
     }
 
@@ -214,18 +231,14 @@ public class IT_ApplicationTests {
                     transaction(i + 1, 1.1, "concurrent", (long) i),
                     transaction(i + 2, 1.1, "concurrent", (long) i)
             };
-            given()
-                    .body(tParent.transaction)
-                    .put("transactionservice/transaction/{id}", tParent.id)
+            putTransaction(tParent)
                     .then().statusCode(OK.value());
 
             CompletableFuture<Status>[] statuses = new CompletableFuture[2];
             for (int j = 0; j < 2; j++) {
                 TransactionWrapper child = children[j];
                 statuses[j] = CompletableFuture.supplyAsync(() ->
-                                given()
-                                        .body(child.transaction)
-                                        .put("transactionservice/transaction/{id}", child.id)
+                                putTransaction(child)
                                         .andReturn().as(Status.class)
                 );
             }
@@ -239,7 +252,8 @@ public class IT_ApplicationTests {
 
     /**
      * Corrupt the underlying data structure with cyclic transaction
-     * and make sure the server doesn't hang when trying to use it
+     * and make sure the server doesn't hang when trying to use it.<br>
+     * It verifies the rollback is clean in such case.
      */
     @Test
     public void shouldStopCyclicTransaction() {
@@ -250,13 +264,17 @@ public class IT_ApplicationTests {
         transactionRepository.save(t2);
         t1.setParent(t2);
         transactionRepository.save(t1);
+        transactionDescendantRepository.save(descendant(t1, t1));
 
         TransactionWrapper tw = transaction(3, 1, "type", 1L);
-        given().body(tw.transaction)
-                .put("transactionservice/transaction/{id}", tw.id)
+        putTransaction(tw)
                 .then()
                 .statusCode(INTERNAL_SERVER_ERROR.value())
                 .and().body("status", is("cyclic transaction"));
+
+        // verify everything rolled back
+        assertThat("Transaction were rolled back", transactionRepository.findOne(3L), is(nullValue()));
+        assertThat("Transaction descendants were rolled back", transactionDescendantRepository.count(), is(1L));
 
 
     }
@@ -278,14 +296,18 @@ public class IT_ApplicationTests {
         };
         for (Object[] test : tests) {
             TransactionWrapper tw = transaction(1, (double) test[0], (String) test[1], (Long) test[2]);
-            given().body(tw.transaction)
-                    .put("transactionservice/transaction/{id}", tw.id)
-                    .then()
+            putTransaction(tw).then()
                     .statusCode(BAD_REQUEST.value())
                     .and().body("status", not(is("ok")));
         }
     }
 
+
+    private Response putTransaction(TransactionWrapper tw) {
+        return given()
+                .body(tw.transaction)
+                .put("transactionservice/transaction/{id}", tw.id);
+    }
 
     private TransactionWrapper transaction(long id, double amount, String type, Long parent) {
         Transaction transaction = Utils.transaction(amount, type, parent);
