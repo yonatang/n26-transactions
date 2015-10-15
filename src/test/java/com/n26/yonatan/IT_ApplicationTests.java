@@ -213,7 +213,7 @@ public class IT_ApplicationTests {
             // Make sure the entity exists in the DB
             assertThat(transactionRepository.findOne((long) i), is(notNullValue()));
             // Make sure descendants of the failed creations were rolled back
-            assertThat(transactionDescendantRepository.findByParent(parentEntity), hasSize(i + 1));
+            assertThat(transactionDescendantRepository.amountsByParent(parentEntity), hasSize(i + 1));
 
         }
     }

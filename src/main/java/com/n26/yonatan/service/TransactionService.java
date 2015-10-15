@@ -19,8 +19,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static java.util.stream.Collectors.summingDouble;
-
 /**
  * Created by yonatan on 12/10/2015.
  */
@@ -124,13 +122,10 @@ public class TransactionService {
         if (t == null) {
             throw new NotFoundException("not found");
         }
-        List<TransactionDescendant> descendants = transactionDescendantRepository.findByParent(t);
 
+        List<Double> amounts = transactionDescendantRepository.amountsByParent(t);
         double sum = t.getAmount() +
-                // calculate the sum of the amounts of the descendants
-                descendants.stream()
-                        .map(TransactionDescendant::getDescendant)
-                        .collect(summingDouble(TransactionEntity::getAmount));
+                amounts.stream().reduce(0.0, Double::sum);
         return new Sum(sum);
     }
 }

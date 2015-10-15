@@ -139,7 +139,7 @@ public class TransactionServiceTest {
     public void sumTransactions_shouldSumChildlessTransaction() {
         TransactionEntity te = entity(1, 1.3, "type");
         setupFindTransaction(te);
-        when(transactionDescendantRepository.findByParent(te)).thenReturn(emptyList());
+        when(transactionDescendantRepository.amountsByParent(te)).thenReturn(emptyList());
 
         Sum sum = transactionService.sumTransactions(1);
         assertThat(sum.getSum(), is(1.3));
@@ -148,12 +148,10 @@ public class TransactionServiceTest {
     @Test
     public void sumTransactions_shouldSumTransactionWithChildren() {
         TransactionEntity tParent = entity(1, 1.3, "type");
-        TransactionEntity te1 = entity(2, 1.1, "type");
-        TransactionEntity te2 = entity(3, 1.5, "type");
 
         setupFindTransaction(tParent);
-        when(transactionDescendantRepository.findByParent(tParent))
-                .thenReturn(Arrays.asList(descendant(tParent, te1), descendant(tParent, te2)));
+        when(transactionDescendantRepository.amountsByParent(tParent))
+                .thenReturn(Arrays.asList(1.1, 1.5));
 
         Sum sum = transactionService.sumTransactions(1);
         assertThat(sum.getSum(), closeTo(1.3 + 1.1 + 1.5, 0.001));
