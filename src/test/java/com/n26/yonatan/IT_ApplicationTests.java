@@ -11,6 +11,7 @@ import com.n26.yonatan.repository.TransactionDescendantRepository;
 import com.n26.yonatan.repository.TransactionRepository;
 import com.n26.yonatan.service.TransactionService;
 import com.n26.yonatan.testutils.SlowTest;
+import com.n26.yonatan.testutils.Utils;
 import lombok.AllArgsConstructor;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.RestAssured.when;
 import static com.n26.yonatan.testutils.IsCloseTo.closeTo;
+import static com.n26.yonatan.testutils.Utils.entity;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -242,17 +244,9 @@ public class IT_ApplicationTests {
     @Test
     public void shouldStopCyclicTransaction() {
         //create a cycle
-        TransactionEntity t1 = new TransactionEntity();
-        t1.setType("type");
-        t1.setId(1L);
-        t1.setAmount(1);
+        TransactionEntity t1 = entity(1L, 1, "type");
         transactionRepository.save(t1);
-
-        TransactionEntity t2 = new TransactionEntity();
-        t2.setType("type");
-        t2.setId(2L);
-        t2.setAmount(1);
-        t2.setParent(t1);
+        TransactionEntity t2 = entity(2L, 1, "type", t1);
         transactionRepository.save(t2);
         t1.setParent(t2);
         transactionRepository.save(t1);
@@ -296,10 +290,7 @@ public class IT_ApplicationTests {
 
 
     private TransactionWrapper transaction(long id, double amount, String type, Long parent) {
-        Transaction transaction = new Transaction();
-        transaction.setType(type);
-        transaction.setAmount(amount);
-        transaction.setParentId(parent);
+        Transaction transaction = Utils.transaction(amount, type, parent);
         return new TransactionWrapper(transaction, id);
     }
 

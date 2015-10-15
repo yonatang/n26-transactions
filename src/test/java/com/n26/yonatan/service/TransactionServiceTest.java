@@ -5,12 +5,10 @@ import com.n26.yonatan.dto.Transaction;
 import com.n26.yonatan.exception.BadRequestException;
 import com.n26.yonatan.exception.NotFoundException;
 import com.n26.yonatan.exception.ServerErrorException;
-import com.n26.yonatan.model.TransactionDescendant;
 import com.n26.yonatan.model.TransactionEntity;
 import com.n26.yonatan.repository.TransactionDescendantRepository;
 import com.n26.yonatan.repository.TransactionRepository;
 import com.n26.yonatan.testutils.FastTest;
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.n26.yonatan.testutils.Utils.descendant;
+import static com.n26.yonatan.testutils.Utils.entity;
+import static com.n26.yonatan.testutils.Utils.transaction;
 import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
@@ -123,10 +124,6 @@ public class TransactionServiceTest {
         when(transactionRepository.findOne(te.getId())).thenReturn(te);
     }
 
-    private TransactionEntity entity(long id, double amount, String type) {
-        return entity(id, amount, type, null);
-    }
-
     @Test(expected = ServerErrorException.class, timeout = 500)
     public void createTransaction_shouldFailOnCircularTransaction() {
         TransactionEntity te2 = entity(2, 1.1, "type");
@@ -173,41 +170,5 @@ public class TransactionServiceTest {
         transactionService.sumTransactions(1);
     }
 
-    private TransactionDescendant descendant(long id, TransactionEntity parent, TransactionEntity descendant) {
-        TransactionDescendant td = new TransactionDescendant();
-        td.setDescendant(descendant);
-        td.setParent(parent);
-        td.setId(id);
-        return td;
-    }
-
-    private TransactionDescendant descendant(TransactionEntity parent, TransactionEntity descendant) {
-        TransactionDescendant td = new TransactionDescendant();
-        td.setDescendant(descendant);
-        td.setParent(parent);
-        td.setId(RandomUtils.nextLong(0, Long.MAX_VALUE));
-        return td;
-    }
-
-    private TransactionEntity entity(long id, double amount, String type, TransactionEntity parent) {
-        TransactionEntity te = new TransactionEntity();
-        te.setAmount(amount);
-        te.setType(type);
-        te.setId(id);
-        te.setParent(parent);
-        return te;
-    }
-
-    private Transaction transaction(double amount, String type) {
-        return transaction(amount, type, null);
-    }
-
-    private Transaction transaction(double amount, String type, Long parentId) {
-        Transaction t = new Transaction();
-        t.setAmount(amount);
-        t.setParentId(parentId);
-        t.setType(type);
-        return t;
-    }
 
 }

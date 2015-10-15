@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.n26.yonatan.testutils.Utils.transaction;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -58,11 +59,9 @@ public class TransactionsControllerTest {
 
     @Test
     public void getTransaction_shouldFindTransaction() throws Exception {
-        Transaction t = new Transaction();
-        t.setType("type");
-        t.setAmount(1.1);
-        t.setParentId(8L);
+        Transaction t = transaction(1.1, "type", 8L);
         when(transactionService.findTransaction(1)).thenReturn(t);
+
         mockMvc.perform(get("/transactionservice/transaction/1"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
@@ -81,24 +80,23 @@ public class TransactionsControllerTest {
     }
 
     @Test
-    public void createTransaction_shouldReturnSavedTransaction() throws Exception {
-        Transaction t = new Transaction();
-        t.setType("type");
-        t.setAmount(1);
+    public void createTransaction_shouldCreateTransaction() throws Exception {
+        Transaction t = transaction(1, "type");
+
         mockMvc.perform(put("/transactionservice/transaction/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(t)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("status", is("ok")));
+
         verify(transactionService).createTransaction(1, t);
         verifyNoMoreInteractions(transactionService);
     }
 
     @Test
     public void createTransaction_shouldRejectFailedValidation_conflict() throws Exception {
-        Transaction t = new Transaction();
-        t.setType("type");
-        t.setAmount(1);
+        Transaction t = transaction(1, "type");
+
         doThrow(DataIntegrityViolationException.class)
                 .when(transactionService).createTransaction(1, t);
 
@@ -119,9 +117,8 @@ public class TransactionsControllerTest {
                 new Object[]{-1.0, "type"} //when amount is negative
         };
         for (Object[] test : tests) {
-            Transaction t = new Transaction();
-            t.setAmount((double) test[0]);
-            t.setType((String) test[1]);
+            Transaction t = transaction((double) test[0], (String) test[1]);
+
             mockMvc.perform(put("/transactionservice/transaction/1")
                     .contentType(MediaType.APPLICATION_JSON)
                     .content(objectMapper.writeValueAsString(t)))
