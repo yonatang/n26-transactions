@@ -1,27 +1,29 @@
 Travis-CI Status: [![Build Status](https://travis-ci.org/yonatang/n26-transactions.svg?branch=master)](https://travis-ci.org/yonatang/n26-transactions)
 
 # Prerequisites
-* Gradle
-* [Lombok](https://projectlombok.org) plugin, to get the code compiled in the IDE
+* [Gradle](https://gradle.org/)
+* [Lombok](https://projectlombok.org) IDE plugin, if you want your get the code compiled in your IDE. Eclipse and
+  Intellij supported.
 
 # Running it
-* gradle bootRun 
-    * it will setup a tomcat server on port 8080 and h2 embedded server.
+* ```gradle bootRun``` 
+    * It will setup a tomcat server on port 8080 and h2 embedded server.
 
 # Stack
 * Java 8
     * Streams, Lambdas
     * CompletableFuture for testing
 * Spring boot (web, data-jpa)
-* H2 In memory db
-* Logback logging
+* H2 as the in-memory db
+* Logback for logging
 * Guava for some java utils
 * Testing:
     * Junit4 + Mockito + Hamcrest for unitests
     * Spring Test + RestAssured for integration tests
+    * Using categories to seperate slow tests and fast tests
  
 # Assumptions
-* transaction.amount >= 0
+* ~~transaction.amount >= 0~~ After rethinking about it, transaction with negative amount make lots of sense
 * transaction.type must match \[a-zA-Z0-9\]*
 * type must be exists
 * no security concerns

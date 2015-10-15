@@ -263,20 +263,18 @@ public class IT_ApplicationTests {
 
     /**
      * This test validate the following save validations:<br>
-     * 1. amount >= 0<br>
-     * 2. type not empty or null<br>
-     * 3. type contains valid characters<br>
-     * 4. parent must exists, if defined<br>
+     * 1. type not empty or null<br>
+     * 2. type contains valid characters<br>
+     * 3. parent must exists, if defined<br>
      */
     @Test
     public void validateTransactionSaveFlow() {
         Object[][] tests = new Object[][]{
-                new Object[]{-1.0, "type", null},
-                new Object[]{2.0, "", null},
-                new Object[]{2.0, null, null},
-                new Object[]{2.0, "type.it", null},
-                new Object[]{2.0, "type/it", null},
-                new Object[]{2.0, "type", 123L}
+                new Object[]{2.0, "", null}, //empty type is forbidden
+                new Object[]{2.0, null, null}, //null type is forbidden
+                new Object[]{2.0, "type.it", null}, //dot in the type is forbidden
+                new Object[]{2.0, "type/it", null}, //slash in the type is forbidden
+                new Object[]{2.0, "type", 123L} //parent transaction must exists
         };
         for (Object[] test : tests) {
             TransactionWrapper tw = transaction(1, (double) test[0], (String) test[1], (Long) test[2]);
@@ -303,6 +301,5 @@ public class IT_ApplicationTests {
     private TransactionWrapper transaction(long id, double amount, String type) {
         return transaction(id, amount, type, null);
     }
-
 
 }

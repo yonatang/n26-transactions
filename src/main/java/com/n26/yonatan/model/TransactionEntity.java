@@ -11,7 +11,6 @@ import javax.persistence.Index;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.Version;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
@@ -35,8 +34,6 @@ public class TransactionEntity {
     @Pattern(regexp = "[a-zA-Z0-9_]*", message = "can only contain letters, numbers or underscore only")
     private String type;
 
-    // although JSR303 says @Min might not work with double, hibernate validators implementation supports that
-    @Min(0)
     private double amount;
 
     @ManyToOne(fetch = FetchType.LAZY)

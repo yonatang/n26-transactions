@@ -113,8 +113,7 @@ public class TransactionsControllerTest {
         Object[][] tests = new Object[][]{
                 new Object[]{1.0, null}, //when type is null
                 new Object[]{1.0, ""}, //when type is missing
-                new Object[]{1.0, "bad format"}, //when type has bad format
-                new Object[]{-1.0, "type"} //when amount is negative
+                new Object[]{1.0, "bad format"} //when type has bad format
         };
         for (Object[] test : tests) {
             Transaction t = transaction((double) test[0], (String) test[1]);

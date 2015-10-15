@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 
@@ -16,8 +15,6 @@ public class Transaction {
     @Pattern(regexp = "[a-zA-Z0-9_]*", message = "can only contain letters, numbers or underscore only")
     private String type;
 
-    // although JSR303 says @Min might not work with double, hibernate validators implementation supports that
-    @Min(0)
     private double amount;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
