@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.IntegrationTest;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -44,6 +45,7 @@ import static org.springframework.http.HttpStatus.OK;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @IntegrationTest("server.port:0")
+@TestPropertySource("classpath:test-application.properties")
 @SpringApplicationConfiguration(classes = Main.class)
 @WebAppConfiguration
 public class IT_ApplicationTests {
