@@ -59,4 +59,4 @@
 * Generated SQL can be shown if setting the relevant application.properties flags 
 
 * Spring boot is easy to run and easy to containerized
-
+* Added travis-ci CI
