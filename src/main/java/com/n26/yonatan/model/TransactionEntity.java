@@ -2,6 +2,7 @@ package com.n26.yonatan.model;
 
 import lombok.Data;
 import lombok.ToString;
+import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import javax.persistence.Entity;
@@ -32,6 +33,7 @@ public class TransactionEntity {
     @NotNull
     @NotEmpty
     @Pattern(regexp = "[a-zA-Z0-9_]*", message = "can only contain letters, numbers or underscore only")
+    @Length(max = 45)
     private String type;
 
     private double amount;

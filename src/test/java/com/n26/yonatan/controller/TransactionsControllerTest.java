@@ -6,6 +6,7 @@ import com.n26.yonatan.dto.Transaction;
 import com.n26.yonatan.exception.NotFoundException;
 import com.n26.yonatan.service.TransactionService;
 import com.n26.yonatan.testutils.FastTest;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -113,7 +114,8 @@ public class TransactionsControllerTest {
         Object[][] tests = new Object[][]{
                 new Object[]{1.0, null}, //when type is null
                 new Object[]{1.0, ""}, //when type is missing
-                new Object[]{1.0, "bad format"} //when type has bad format
+                new Object[]{1.0, "bad format"}, //when type has bad format
+                new Object[]{1.0, StringUtils.repeat('a', 46)} //a too long type name
         };
         for (Object[] test : tests) {
             Transaction t = transaction((double) test[0], (String) test[1]);

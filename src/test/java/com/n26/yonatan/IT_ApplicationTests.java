@@ -14,6 +14,7 @@ import com.n26.yonatan.service.TransactionService;
 import com.n26.yonatan.testutils.SlowTest;
 import com.n26.yonatan.testutils.Utils;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -95,12 +96,15 @@ public class IT_ApplicationTests {
      */
     @Test
     public void saveSumAndQueryFlow() {
+        String longTypeName = StringUtils.repeat('a', 45);
         TransactionWrapper[] graph = new TransactionWrapper[]{
                 transaction(1, 1.1, "type1"),
                 transaction(2, 5.1, "type1", 1L),
                 transaction(3, 7.1, "type2", 1L),
                 transaction(4, 11.1, "type1", 2L),
                 transaction(5, 13, "type2", 2L),
+                transaction(6, 13, longTypeName), //test the maximum size of the type name
+
                 transaction(99, 999.9, "type2")
 
         };
@@ -161,6 +165,7 @@ public class IT_ApplicationTests {
             Object[][] tests = new Object[][]{
                     new Object[]{"type1", newHashSet(1L, 2L, 4L)},
                     new Object[]{"type2", newHashSet(3L, 5L, 99L)},
+                    new Object[]{longTypeName, newHashSet(6L)},
                     new Object[]{"type3", newHashSet()}
             };
             for (Object[] test : tests) {
