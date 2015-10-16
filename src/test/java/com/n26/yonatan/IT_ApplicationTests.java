@@ -103,8 +103,8 @@ public class IT_ApplicationTests {
                 transaction(3, 7.1, "type2", 1L),
                 transaction(4, 11.1, "type1", 2L),
                 transaction(5, 13, "type2", 2L),
-                transaction(6, 13, longTypeName), //test the maximum size of the type name
-
+                transaction(6, 14, longTypeName), //test the maximum size of the type name
+                transaction(7, 15, "abc_ABC_3"), //test the entire set of letters allowed
                 transaction(99, 999.9, "type2")
 
         };
