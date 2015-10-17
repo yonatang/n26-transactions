@@ -9,6 +9,7 @@ import com.n26.yonatan.model.TransactionEntity;
 import com.n26.yonatan.repository.Db;
 import com.n26.yonatan.repository.TypeIdxDb;
 import com.n26.yonatan.testutils.FastTest;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -16,11 +17,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import static com.n26.yonatan.testutils.Utils.transaction;
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -118,6 +122,32 @@ public class TransactionServiceTest {
         Set<Long> types = typeIdxDb.get("type");
         assertThat(types, notNullValue());
         assertThat(types, contains(2L, 5L));
+    }
+
+    @Test
+    public void createTransaction_shouldUpdateInHighConcurrent() {
+        Transaction parent = transaction(1.1, "type");
+
+        int N = 150;
+
+        transactionService.createTransaction(1, parent);
+        List<Pair<Long, Transaction>> ts = new ArrayList<>();
+        double sum = 1.1;
+        for (int i = 0; i < N; i++) {
+            Transaction tChild = transaction(i + 1, "type", 1L);
+            sum += i + 1;
+            ts.add(Pair.of(Long.valueOf(i + 2), tChild));
+        }
+
+        ts.stream().parallel().forEach(pair -> {
+            long idx = pair.getLeft();
+            Transaction tx = pair.getRight();
+            transactionService.createTransaction(idx, tx);
+        });
+
+        assertThat(db.size(), is(N + 1));
+        assertThat(db.get(1L).getSum().get(), closeTo(sum, 0.001));
+        assertThat(typeIdxDb.get("type"), hasSize(N + 1));
     }
 
     @Test
