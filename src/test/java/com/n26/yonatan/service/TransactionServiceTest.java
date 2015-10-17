@@ -133,16 +133,16 @@ public class TransactionServiceTest {
         transactionService.createTransaction(1, parent);
         List<Pair<Long, Transaction>> ts = new ArrayList<>();
         double sum = 1.1;
-        for (int i = 0; i < N; i++) {
+        for (long i = 0; i < N; i++) {
             Transaction tChild = transaction(i + 1, "type", 1L);
             sum += i + 1;
-            ts.add(Pair.of(Long.valueOf(i + 2), tChild));
+            ts.add(Pair.of(i + 2, tChild));
         }
 
         ts.stream().parallel().forEach(pair -> {
-            long idx = pair.getLeft();
+            long id = pair.getLeft();
             Transaction tx = pair.getRight();
-            transactionService.createTransaction(idx, tx);
+            transactionService.createTransaction(id, tx);
         });
 
         assertThat(db.size(), is(N + 1));
