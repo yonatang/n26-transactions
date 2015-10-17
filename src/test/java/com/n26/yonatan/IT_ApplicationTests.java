@@ -8,8 +8,8 @@ import com.jayway.restassured.response.Response;
 import com.n26.yonatan.dto.Status;
 import com.n26.yonatan.dto.Transaction;
 import com.n26.yonatan.model.TransactionEntity;
-import com.n26.yonatan.repository.TransactionDescendantRepository;
-import com.n26.yonatan.repository.TransactionRepository;
+import com.n26.yonatan.repository.Db;
+import com.n26.yonatan.repository.TypeIdxDb;
 import com.n26.yonatan.service.TransactionService;
 import com.n26.yonatan.testutils.SlowTest;
 import com.n26.yonatan.testutils.Utils;
@@ -33,20 +33,15 @@ import static com.google.common.collect.Sets.newHashSet;
 import static com.jayway.restassured.RestAssured.given;
 import static com.jayway.restassured.RestAssured.when;
 import static com.n26.yonatan.testutils.IsCloseTo.closeTo;
-import static com.n26.yonatan.testutils.Utils.descendant;
-import static com.n26.yonatan.testutils.Utils.entity;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.OK;
 
@@ -65,10 +60,10 @@ public class IT_ApplicationTests {
     TransactionService transactionService;
 
     @Autowired
-    TransactionDescendantRepository transactionDescendantRepository;
+    Db db;
 
     @Autowired
-    TransactionRepository transactionRepository;
+    TypeIdxDb typeIdxDb;
 
     @Value("${local.server.port}")
     private int serverPort;
@@ -79,8 +74,8 @@ public class IT_ApplicationTests {
         RestAssured.defaultParser = Parser.JSON;
         RestAssured.requestSpecification = new RequestSpecBuilder().setContentType(ContentType.JSON).build();
 
-        transactionDescendantRepository.deleteAll();
-        transactionRepository.deleteAll();
+        db.clear();
+        typeIdxDb.clear();
     }
 
     /**
@@ -193,12 +188,14 @@ public class IT_ApplicationTests {
         putTransaction(parent)
                 .then()
                 .statusCode(OK.value());
-        TransactionEntity parentEntity = transactionRepository.findOne(parent.id);
+        TransactionEntity parentEntity = db.get(parent.id);
         // Assert the parent saved to the DB
         assertThat(parentEntity, is(notNullValue()));
 
+        double sum = 5;
         for (int i = 0; i < 10; i++) {
             TransactionWrapper tw = transaction(i, 1.1, "concurrent", parent.id);
+            sum += 1.1;
             CompletableFuture<Status>[] statuses = new CompletableFuture[2];
             for (int j = 0; j < 2; j++) {
                 statuses[j] = CompletableFuture.supplyAsync(() ->
@@ -216,9 +213,10 @@ public class IT_ApplicationTests {
                             containsString("conflict:ok")));
 
             // Make sure the entity exists in the DB
-            assertThat(transactionRepository.findOne((long) i), is(notNullValue()));
-            // Make sure descendants of the failed creations were rolled back
-            assertThat(transactionDescendantRepository.amountsByParent(parentEntity), hasSize(i + 1));
+            assertThat(db.get((long) i), is(notNullValue()));
+            // Make sure no side effect when failing to insert
+            assertThat(db.get(parent.id).getSum().get(), closeTo(sum, 0.001));
+
 
         }
     }
@@ -256,35 +254,6 @@ public class IT_ApplicationTests {
     }
 
     /**
-     * Corrupt the underlying data structure with cyclic transaction
-     * and make sure the server doesn't hang when trying to use it.<br>
-     * It verifies the rollback is clean in such case.
-     */
-    @Test
-    public void shouldStopCyclicTransaction() {
-        //create a cycle
-        TransactionEntity t1 = entity(1L, 1, "type");
-        transactionRepository.save(t1);
-        TransactionEntity t2 = entity(2L, 1, "type", t1);
-        transactionRepository.save(t2);
-        t1.setParent(t2);
-        transactionRepository.save(t1);
-        transactionDescendantRepository.save(descendant(t1, t1));
-
-        TransactionWrapper tw = transaction(3, 1, "type", 1L);
-        putTransaction(tw)
-                .then()
-                .statusCode(INTERNAL_SERVER_ERROR.value())
-                .and().body("status", is("cyclic transaction"));
-
-        // verify everything rolled back
-        assertThat("Transaction were rolled back", transactionRepository.findOne(3L), is(nullValue()));
-        assertThat("Transaction descendants were rolled back", transactionDescendantRepository.count(), is(1L));
-
-
-    }
-
-    /**
      * This test validate the following save validations:<br>
      * 1. type not empty or null<br>
      * 2. type contains valid characters<br>
@@ -297,7 +266,8 @@ public class IT_ApplicationTests {
                 new Object[]{2.0, null, null}, //null type is forbidden
                 new Object[]{2.0, "type.it", null}, //dot in the type is forbidden
                 new Object[]{2.0, "type/it", null}, //slash in the type is forbidden
-                new Object[]{2.0, "type", 123L} //parent transaction must exists
+                new Object[]{2.0, "type", 123L}, //parent transaction must exists
+                new Object[]{2.0 ,"type", 1L } // self pointing transaction are not allowed
         };
         for (Object[] test : tests) {
             TransactionWrapper tw = transaction(1, (double) test[0], (String) test[1], (Long) test[2]);

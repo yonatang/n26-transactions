@@ -1,77 +1,39 @@
 package com.n26.yonatan.model;
 
+import com.google.common.util.concurrent.AtomicDouble;
+import com.n26.yonatan.dto.Transaction;
 import lombok.Data;
-import lombok.ToString;
-import org.hibernate.validator.constraints.Length;
-import org.hibernate.validator.constraints.NotEmpty;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.ManyToOne;
-import javax.persistence.Table;
-import javax.persistence.Version;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
+import java.util.UUID;
 
 /**
  * Transaction DB Entity.
  */
 @Data
-//do not print parent, to eliminate stackoverflow exception in case of circular transactions
-@ToString(exclude = "parent")
-@Entity
-@Table(indexes = {@Index(columnList = "type", name = "type_index")})
+@EqualsAndHashCode(exclude = "sum")
+@RequiredArgsConstructor
 public class TransactionEntity {
-    @Id
-    private Long id;
 
-    @Version
-    private Long version;
-
-    @NotNull
-    @NotEmpty
-    @Pattern(regexp = "[a-zA-Z0-9_]*", message = "can only contain letters, numbers or underscore only")
-    @Length(max = 45)
-    private String type;
-
-    private double amount;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    private TransactionEntity parent;
-
-    /**
-     * hashCode semantics - if ID exists, use the ID hashCode, otherwise use object reference
-     *
-     * @return
-     */
-    public int hashCode() {
-        if (id != null) {
-            return id.hashCode();
-        } else {
-            return System.identityHashCode(this);
-        }
+    public TransactionEntity(long id, Transaction t) {
+        this.id = id;
+        this.amount = t.getAmount();
+        this.type = t.getType();
+        this.parentId = t.getParentId();
+        this.sum.addAndGet(this.amount);
     }
 
-    /**
-     * equals semantics - if ID exists in both objects, assume equality if both IDs equals.
-     * Otherwise, compare objects references
-     *
-     * @param o
-     * @return
-     */
-    public boolean equals(Object o) {
-        if (o == null || !(o instanceof TransactionEntity)) {
-            return false;
-        }
-        TransactionEntity t = (TransactionEntity) o;
-        if (t.getId() == null && getId() == null) {
-            return t == o;
-        }
-        if (getId() == null || t.getId() == null) {
-            return false;
-        }
-        return getId().equals(t.getId());
-    }
+    private final long id;
+
+    private final UUID uuid = UUID.randomUUID();
+
+    private final Long parentId;
+
+    private final String type;
+
+    private final double amount;
+
+    private final AtomicDouble sum = new AtomicDouble();
 }

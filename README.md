@@ -15,9 +15,9 @@
     * Streams, Lambdas
     * CompletableFuture for testing
 * Spring boot (web, data-jpa)
-* Hibernate
+* ~~Hibernate~~
 * Hibernate Validators
-* H2 as the in-memory db
+* ~~H2~~ ```ConcurrentHashMap``` as the in-memory db
 * Logback for logging
 * Guava for some java utils
 * Testing:
@@ -36,7 +36,17 @@
     * Spring security allow to easily defines roles, and define ACL policy both on the URLs and the service methods.
 * Cannot override existing transaction id. Trying to PUT two transaction with same ID will cause one of them to fail.
 
-# Discussion
+# Discussion 
+Notice that I haven't re-written (yet) the discussion for this branch. Some (most) of the points are relevant for the 
+relational implementation, and not for the one that is using the in-memory thread safe map.
+
+In a nutshell, this implementation perform:
+* creation in ```O(log #-of-transactions)```
+* find transaction in ```O(1)```
+* sum in ```O(1)```
+* find by type in ```O(#-of-transaction-for-that-type)``` (That is, of all of the transaction are of the same type, this 
+  would return a list of all the transactions' ids) 
+   
 ## Performance and concurrency
 * The [controller](src/main/java/com/n26/yonatan/controller/TransactionsController.java) and the 
   [service](src/main/java/com/n26/yonatan/service/TransactionService.java) are fully stateless. 

@@ -1,8 +1,10 @@
 package com.n26.yonatan.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import com.n26.yonatan.dto.Sum;
 import com.n26.yonatan.dto.Transaction;
+import com.n26.yonatan.exception.ConflictException;
 import com.n26.yonatan.exception.NotFoundException;
 import com.n26.yonatan.service.TransactionService;
 import com.n26.yonatan.testutils.FastTest;
@@ -15,13 +17,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Set;
 
 import static com.n26.yonatan.testutils.Utils.transaction;
 import static org.hamcrest.Matchers.hasSize;
@@ -98,7 +99,7 @@ public class TransactionsControllerTest {
     public void createTransaction_shouldRejectFailedValidation_conflict() throws Exception {
         Transaction t = transaction(1, "type");
 
-        doThrow(DataIntegrityViolationException.class)
+        doThrow(new ConflictException("conflict"))
                 .when(transactionService).createTransaction(1, t);
 
         mockMvc.perform(put("/transactionservice/transaction/1")
@@ -152,7 +153,7 @@ public class TransactionsControllerTest {
 
     @Test
     public void getTransactionsByType_shouldReturnTransactionIds() throws Exception {
-        List<Long> ids = Arrays.asList(1L, 5L);
+        Set<Long> ids = Sets.newTreeSet(Arrays.asList(1L, 5L));
         when(transactionService.getTransactionIdsByType("cars")).thenReturn(ids);
         mockMvc.perform(get("/transactionservice/types/cars"))
                 .andExpect(status().isOk())

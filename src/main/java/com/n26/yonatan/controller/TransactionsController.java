@@ -8,7 +8,6 @@ import com.n26.yonatan.service.TransactionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.List;
+import java.util.Set;
 
 /**
  * The Transaction Service controller
@@ -49,7 +48,7 @@ public class TransactionsController {
     }
 
     @RequestMapping(value = "types/{type}", method = RequestMethod.GET)
-    public List<Long> getTransactionsByType(@PathVariable(value = "type") String type) {
+    public Set<Long> getTransactionsByType(@PathVariable(value = "type") String type) {
         log.trace("getTransactionsByType {}", type);
         return transactionService.getTransactionIdsByType(type);
     }
@@ -80,14 +79,6 @@ public class TransactionsController {
         Status status = new Status("Invalid request: " + errors);
         status.setPath(req.getServletPath());
         return new ResponseEntity<>(status, HttpStatus.BAD_REQUEST);
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Status> handleConflicts(DataIntegrityViolationException e, HttpServletRequest req) {
-        log.debug("Conflic when inserting entity when {} {}", req.getMethod(), req.getServletPath());
-        Status status = new Status("conflict");
-        status.setPath(req.getServletPath());
-        return new ResponseEntity<>(status, HttpStatus.CONFLICT);
     }
 
 }
